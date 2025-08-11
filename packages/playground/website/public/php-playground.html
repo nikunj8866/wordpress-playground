@@ -2,6 +2,10 @@
 <html lang="en">
 	<head>
 		<meta charset="UTF-8" />
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1.0, user-scalable=yes"
+		/>
 		<title>WordPress PHP Playground</title>
 		<style>
 			html,
@@ -52,6 +56,26 @@
 				display: flex;
 				align-items: center;
 				gap: 8px;
+			}
+
+			.controls-right button {
+				padding: 6px 12px;
+				border: 1px solid #ccc;
+				border-radius: 4px;
+				background: white;
+				cursor: pointer;
+				transition: background-color 0.2s;
+			}
+
+			.controls-right button:hover {
+				background: #f0f0f0;
+			}
+
+			.controls-right select {
+				padding: 6px 8px;
+				border: 1px solid #ccc;
+				border-radius: 4px;
+				background: white;
 			}
 
 			#helpBtn {
@@ -228,17 +252,158 @@
 			}
 
 			/* Responsive layout: stack panes on small screens */
-			@media (max-width: 900px) {
+			@media (max-width: 1200px) {
 				#app {
 					flex-direction: column;
 				}
 				#previewPane {
-					height: 50vh;
+					height: 45vh;
 					min-width: 0;
 				}
+				#editorPane {
+					min-width: 0;
+				}
+			}
+
+			/* Tablet and small desktop adjustments */
+			@media (max-width: 900px) {
+				.controls h1 {
+					font-size: 16px;
+				}
+				.controls-right {
+					gap: 6px;
+				}
+				.controls-right label,
+				.controls-right select,
+				.controls-right button,
+				.controls-right a {
+					font-size: 14px;
+				}
+				#previewPane {
+					height: 40vh;
+				}
+			}
+
+			/* Mobile phone adjustments */
+			@media (max-width: 768px) {
+				.controls {
+					flex-direction: column;
+					align-items: stretch;
+					gap: 8px;
+					padding: 12px;
+				}
+				.controls h1 {
+					font-size: 14px;
+					text-align: center;
+					margin-bottom: 4px;
+				}
+				.controls-right {
+					justify-content: center;
+					flex-wrap: wrap;
+					gap: 8px;
+				}
+				.controls-right button {
+					padding: 8px 12px;
+					min-height: 44px; /* Touch-friendly */
+				}
+				.controls-right select {
+					min-height: 44px; /* Touch-friendly */
+				}
+				#previewPane {
+					height: 35vh;
+				}
+				#editor .cm-editor {
+					font-size: 13px;
+				}
+			}
+
+			/* Small mobile adjustments */
+			@media (max-width: 480px) {
+				.controls {
+					padding: 8px;
+				}
+				.controls h1 {
+					font-size: 13px;
+				}
+				.controls-right {
+					font-size: 13px;
+				}
+				.controls-right button,
+				.controls-right select {
+					min-height: 40px;
+					font-size: 13px;
+				}
+				#helpBtn {
+					font-size: 12px;
+				}
+				#previewPane {
+					height: 30vh;
+				}
+				#editor .cm-editor {
+					font-size: 12px;
+					line-height: 1.3;
+				}
+			}
+
+			/* Modal responsive styles */
+			@media (max-width: 768px) {
 				.modal-content {
-					margin: 10px;
-					max-width: calc(100% - 20px);
+					margin: 5px;
+					max-width: calc(100% - 10px);
+					max-height: calc(100vh - 10px);
+					border-radius: 6px;
+					padding: 16px;
+				}
+				.modal-header h2 {
+					font-size: 18px;
+				}
+				.modal-body {
+					font-size: 14px;
+				}
+				.modal-body h3 {
+					font-size: 16px;
+				}
+				.modal-body h4 {
+					font-size: 15px;
+				}
+				.modal-body pre {
+					font-size: 11px !important;
+					overflow-x: auto;
+					white-space: pre-wrap;
+					word-break: break-all;
+				}
+			}
+
+			/* Very small screens */
+			@media (max-width: 360px) {
+				.controls-right {
+					flex-direction: column;
+					align-items: center;
+				}
+				.controls-right button,
+				.controls-right select {
+					width: 100%;
+					max-width: 200px;
+				}
+			}
+
+			/* Landscape phone orientation */
+			@media (max-height: 500px) and (orientation: landscape) {
+				#app {
+					flex-direction: row;
+				}
+				#previewPane {
+					height: auto;
+					width: 50%;
+				}
+				.controls {
+					padding: 4px 8px;
+				}
+				.controls h1 {
+					font-size: 12px;
+				}
+				.controls-right {
+					gap: 4px;
 				}
 			}
 		</style>
@@ -249,6 +414,10 @@
 				<div class="controls">
 					<h1>WordPress PHP Playground</h1>
 					<div class="controls-right">
+						<label for="wpVersion">WordPress</label>
+						<select id="wpVersion">
+							<option>Loading...</option>
+						</select>
 						<label for="phpVersion">PHP</label>
 						<select id="phpVersion">
 							<option value="8.4" selected>8.4</option>
@@ -310,30 +479,11 @@
 					<h2>💡 Tips</h2>
 					<ul>
 						<li>
-							<strong>🌟 WordPress is available!</strong> Run
-							<code>require '/wordpress/wp-load.php';</code> to
-							load the latest WordPress release. For example:
-							<pre
-								style="
-									background: #f5f5f5;
-									padding: 8px;
-									margin: 8px 0;
-									border-radius: 4px;
-									font-size: 13px;
-									overflow-x: auto;
-								"
-							><code>&lt;?php
-require '/wordpress/wp-load.php';
-
-$html_processor = WP_HTML_Processor::create_fragment('&lt;p>&lt;span>Hey!&lt;/span>&lt;/p>');
-$html_processor->next_tag();
-var_dump($html_processor->get_tag());</code></pre>
-						</li>
-						<li>
 							<strong>🔗 Embed in your app:</strong> You can embed
 							this playground in an iframe to provide interactive
 							PHP code snippets. Provide your base64-encoded code
-							snippet and your PHP version in the URL fragment:
+							snippet, PHP version, and WordPress version in the
+							URL fragment:
 							<pre
 								style="
 									background: #f5f5f5;
@@ -367,7 +517,7 @@ var_dump($html_processor->get_tag());</code></pre>
 		</div>
 
 		<script>
-			// Function to restore code and PHP version from URL fragment
+			// Function to restore code, PHP version, and WordPress version from URL fragment
 			function loadStateFromURL() {
 				const fragment = window.location.hash.slice(1); // Remove #
 				if (fragment) {
@@ -378,31 +528,33 @@ var_dump($html_processor->get_tag());</code></pre>
 							return {
 								code: state.code || null,
 								phpVersion: state.php || null,
+								wpVersion: state.wp || null,
 							};
 						} catch (e) {
 							// Try legacy format (just code)
 							return {
 								code: decoded,
 								phpVersion: null,
+								wpVersion: null,
 							};
 						}
 					}
 				}
-				return { code: null, phpVersion: null };
+				return { code: null, phpVersion: null, wpVersion: null };
 			}
 
 			/**
 			 * URL Fragment State Storage
 			 *
-			 * This implementation stores and restores PHP code and PHP version from the URL fragment using base64 encoding.
+			 * This implementation stores and restores PHP code, PHP version, and WordPress version from the URL fragment using base64 encoding.
 			 * Features:
 			 * - UTF-8 safe encoding/decoding
-			 * - Stores both code and PHP version
+			 * - Stores code, PHP version, and WordPress version
 			 * - Automatic saving on code changes (debounced to 500ms)
-			 * - Automatic saving when PHP version changes
+			 * - Automatic saving when PHP or WordPress version changes
 			 * - Immediate saving when running code (Cmd+S)
 			 * - Browser navigation support (back/forward buttons)
-			 * - Shareable URLs with embedded code and PHP version
+			 * - Shareable URLs with embedded code and versions
 			 * - Backward compatibility with legacy code-only URLs
 			 */
 
@@ -444,25 +596,33 @@ var_dump($html_processor->get_tag());</code></pre>
 				}
 			}
 
-			// Function to save code and PHP version to URL fragment
-			function saveStateToURL(code, phpVersion) {
+			// Function to save code, PHP version, and WordPress version to URL fragment
+			function saveStateToURL(code, phpVersion, wpVersion) {
 				const state = JSON.stringify({
 					code: code,
 					php: phpVersion,
+					wp: wpVersion,
 				});
 				const encoded = encodeBase64UTF8(state);
 				// Use replaceState to avoid adding to browser history
 				window.history.replaceState(null, null, '#' + encoded);
 			}
 
-			var versionSelect = document.getElementById('phpVersion');
+			var phpVersionSelect = document.getElementById('phpVersion');
+			var wpVersionSelect = document.getElementById('wpVersion');
 
-			function restorePHPVersionFromURL() {
+			function restoreVersionsFromURL() {
 				var defaultPhpVersion = '8.4';
-				const { phpVersion: initialPhpVersion } = loadStateFromURL();
-				versionSelect.value = initialPhpVersion || defaultPhpVersion;
+				var defaultWpVersion = '6.8'; // Will be updated with actual latest version
+				const {
+					phpVersion: initialPhpVersion,
+					wpVersion: initialWpVersion,
+				} = loadStateFromURL();
+				phpVersionSelect.value = initialPhpVersion || defaultPhpVersion;
+				if (initialWpVersion && wpVersionSelect.options.length > 1) {
+					wpVersionSelect.value = initialWpVersion;
+				}
 			}
-			restorePHPVersionFromURL();
 
 			// Modal functionality
 			const helpBtn = document.getElementById('helpBtn');
@@ -547,37 +707,45 @@ var_dump($html_processor->get_tag());</code></pre>
 			import {
 				startPlaygroundWeb,
 				SupportedPHPVersionsList,
-			} from 'https://esm.sh/@wp-playground/client';
+			} from 'https://playground.wordpress.net/client/index.js';
 
 			const editorEl = document.getElementById('editor');
 			const phpCompartment = new Compartment();
 
 			const defaultPhpVersion = '8.4';
-			const { phpVersion: initialPhpVersion } = loadStateFromURL();
+			const {
+				phpVersion: initialPhpVersion,
+				wpVersion: initialWpVersion,
+			} = loadStateFromURL();
 			const startingPhpVersion = initialPhpVersion || defaultPhpVersion;
-			// Populate PHP version select options from SupportedPHPVersionsList
-			versionSelect.innerHTML = ''; // Clear existing options
+			const startingWpVersion = initialWpVersion || 'latest';
 
+			// Populate PHP version select options from SupportedPHPVersionsList
+			phpVersionSelect.innerHTML = ''; // Clear existing options
 			SupportedPHPVersionsList.forEach((version) => {
 				const option = document.createElement('option');
 				option.value = version;
 				option.textContent = version;
-				versionSelect.appendChild(option);
+				phpVersionSelect.appendChild(option);
 			});
 
-			// Set the first version as selected by default
-			restorePHPVersionFromURL();
+			// WordPress versions will be populated after the client connects
+
+			// Set the versions from URL or defaults
+			restoreVersionsFromURL();
 
 			const defaultCode = `<?php
-// Welcome to PHP Playground!
-$message = "Hello from PHP " . phpversion();
-echo $message;
+echo "Hello from PHP " . phpversion();
+echo "<br>";
 
-function greet($name) {
-    return "Hello, " . $name . "!";
-}
+// WordPress is available if you need it!
+require '/wordpress/wp-load.php';
 
-echo greet("World");
+echo "WordPress " . wp_get_wp_version() . "<br>";
+
+$html_processor = WP_HTML_Processor::create_fragment('<p><span>Hey!</span></p>');
+$html_processor->next_tag();
+var_dump($html_processor->get_tag());
 ?>`;
 
 			// Load initial state from URL
@@ -616,12 +784,12 @@ echo greet("World");
 					EditorView.updateListener.of((update) => {
 						if (update.docChanged) {
 							const code = update.state.doc.toString();
-							const phpVersion =
-								document.getElementById('phpVersion').value;
+							const phpVersion = phpVersionSelect.value;
+							const wpVersion = wpVersionSelect.value;
 							// Debounce URL updates to avoid excessive history updates
 							clearTimeout(window.saveCodeTimeout);
 							window.saveCodeTimeout = setTimeout(() => {
-								saveStateToURL(code, phpVersion);
+								saveStateToURL(code, phpVersion, wpVersion);
 							}, 500);
 						}
 					}),
@@ -652,13 +820,19 @@ echo greet("World");
 			const runBtn = document.getElementById('runBtn');
 			const previewIframe = document.getElementById('preview');
 
-			// Set initial PHP version from URL
+			// Set initial versions from URL
 			if (startingPhpVersion) {
-				versionSelect.value = startingPhpVersion;
+				phpVersionSelect.value = startingPhpVersion;
+			}
+			if (startingWpVersion && wpVersionSelect.options.length > 1) {
+				wpVersionSelect.value = startingWpVersion;
 			}
 
 			let client = null;
-			let currentPhpVersion = versionSelect.value;
+			let currentPhpVersion = phpVersionSelect.value;
+			let currentWpVersion = wpVersionSelect.value;
+			let bootPromise = Promise.resolve();
+			let runCounter = 0;
 
 			// Detect platform for keyboard shortcut display
 			const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
@@ -666,54 +840,103 @@ echo greet("World");
 			runBtn.textContent = `Run (${shortcutText})`;
 
 			// Save to URL when PHP version changes
-			versionSelect.addEventListener('change', () => {
+			phpVersionSelect.addEventListener('change', () => {
 				const code = view.state.doc.toString();
-				const phpVersion = versionSelect.value;
-				saveStateToURL(code, phpVersion);
+				const phpVersion = phpVersionSelect.value;
+				const wpVersion = wpVersionSelect.value;
+				saveStateToURL(code, phpVersion, wpVersion);
 			});
 
-			async function bootPlayground(version) {
-				// Point the iframe at the appropriate PHP version using the Query API
-				previewIframe.src = `https://playground.wordpress.net/remote.html?php=${encodeURIComponent(
-					version
-				)}`;
+			// Save to URL when WordPress version changes
+			wpVersionSelect.addEventListener('change', () => {
+				const code = view.state.doc.toString();
+				const phpVersion = phpVersionSelect.value;
+				const wpVersion = wpVersionSelect.value;
+				saveStateToURL(code, phpVersion, wpVersion);
+			});
+
+			async function bootPlayground(phpVersion, wpVersion) {
+				// Point the iframe at the appropriate PHP and WordPress versions using the Query API
+				previewIframe.src = `https://playground.wordpress.net/remote.html`;
 				client = await startPlaygroundWeb({
 					iframe: previewIframe,
 					remoteUrl: previewIframe.src,
 					blueprint: {
 						preferredVersions: {
-							wp: 'latest',
-							php: version,
+							wp: wpVersion,
+							php: phpVersion,
 						},
 					},
 				});
+
+				// Populate WordPress versions from the connected client
+				try {
+					const { all, latest } =
+						await client.getMinifiedWordPressVersions();
+					const keys = Object.keys(all);
+					wpVersionSelect.innerHTML = '';
+					for (const version of keys) {
+						const option = document.createElement('option');
+						option.value = version;
+						option.textContent = version;
+						wpVersionSelect.appendChild(option);
+					}
+					// Use the requested version if available; otherwise fall back to latest
+					wpVersionSelect.value = keys.includes(wpVersion)
+						? wpVersion
+						: latest;
+				} catch (e) {
+					console.warn(
+						'Failed to load WordPress versions list from client',
+						e
+					);
+				}
 				await client.isReady;
 				await client.writeFile('/wordpress/code.php', startingCode);
 				await client.goTo('/code.php'); // Blank document
+				// Sync current versions after boot to avoid unnecessary reboots on first run
+				currentPhpVersion = phpVersionSelect.value;
+				currentWpVersion = wpVersionSelect.value;
 			}
 
 			async function executeCode() {
 				const code = view.state.doc.toString();
-				const phpVersion = versionSelect.value;
+				const phpVersion = phpVersionSelect.value;
+				const wpVersion = wpVersionSelect.value;
 
-				// Save code and PHP version to URL fragment immediately when running
-				saveStateToURL(code, phpVersion);
+				// Save code, PHP version, and WordPress version to URL fragment immediately when running
+				saveStateToURL(code, phpVersion, wpVersion);
 
-				if (phpVersion !== currentPhpVersion) {
+				// Ensure initial boot finished before proceeding
+				await bootPromise;
+
+				if (
+					phpVersion !== currentPhpVersion ||
+					wpVersion !== currentWpVersion
+				) {
 					currentPhpVersion = phpVersion;
-					await bootPlayground(currentPhpVersion);
+					currentWpVersion = wpVersion;
+					bootPromise = bootPlayground(
+						currentPhpVersion,
+						currentWpVersion
+					);
+					await bootPromise;
 				}
 				await client.writeFile('/wordpress/code.php', code);
-				const uuid = crypto.randomUUID();
-				await client.goTo('/code.php?' + uuid);
+				runCounter += 1;
+				const cacheBuster = 'run=' + runCounter + '-' + Date.now();
+				await client.goTo('/code.php?' + cacheBuster);
 			}
 
 			runBtn.addEventListener('click', executeCode);
 
 			// Handle browser navigation (back/forward) to restore code from URL
 			window.addEventListener('hashchange', () => {
-				const { code: codeFromURL, phpVersion: phpVersionFromURL } =
-					loadStateFromURL();
+				const {
+					code: codeFromURL,
+					phpVersion: phpVersionFromURL,
+					wpVersion: wpVersionFromURL,
+				} = loadStateFromURL();
 
 				if (codeFromURL !== null) {
 					const currentCode = view.state.doc.toString();
@@ -731,20 +954,32 @@ echo greet("World");
 
 				if (
 					phpVersionFromURL !== null &&
-					phpVersionFromURL !== versionSelect.value
+					phpVersionFromURL !== phpVersionSelect.value
 				) {
 					// Update PHP version selector
-					versionSelect.value = phpVersionFromURL;
+					phpVersionSelect.value = phpVersionFromURL;
+				}
+
+				if (
+					wpVersionFromURL !== null &&
+					wpVersionFromURL !== wpVersionSelect.value
+				) {
+					// Update WordPress version selector
+					wpVersionSelect.value = wpVersionFromURL;
 				}
 			});
 
 			// Save initial state to URL if not already present
 			if (!window.location.hash) {
-				saveStateToURL(startingCode, startingPhpVersion);
+				saveStateToURL(
+					startingCode,
+					startingPhpVersion,
+					startingWpVersion
+				);
 			}
 
 			// Initial boot
-			bootPlayground(currentPhpVersion);
+			bootPromise = bootPlayground(currentPhpVersion, currentWpVersion);
 		</script>
 	</body>
 </html>
